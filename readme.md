@@ -12,3 +12,4 @@
     + [第二节：SSATable](Chapter5-FunctionPhase-Section3-me_ssa_tab.md)
     + [第三节：死代码消除](./Chapter5-FunctionPhase-Section2-me_dse.md)
     + [第四节：支配树](./Chapter5-FunctionPhase-Section4-me_dominance.md)
+    + [第五节：SSA构造](./Chapter5-FunctionPhase-Section5-me_ssa.md)
