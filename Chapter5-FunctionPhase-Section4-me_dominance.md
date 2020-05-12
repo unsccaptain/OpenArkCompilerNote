@@ -7,44 +7,39 @@
 &emsp;&emsp;MeDoDominance只是简单的调用了Dominance的接口来初始化，具体的实现还是在Dominance类中：
 ``` cpp
 AnalysisResult* MeDoDominance::Run(MeFunction* func, MeFuncResultMgr*, ModuleResultMgr*) {
-	MemPool* memPool = NewMemPool();
-	auto* dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
-		*func->GetCommonEntryBB(), *func->GetCommonExitBB());
-    // 生成后序遍历序列和逆后序序列
-	dom->GenPostOrderID();
-    // 计算支配关系（被支配节点到支配节点的映射）
-	dom->ComputeDominance();
-    // 计算支配边界
-	dom->ComputeDomFrontiers();
-    // 计算支配关系（支配节点到被支配节点的映射）
-	dom->ComputeDomChildren();
-	size_t num = 0;
-    // 生成支配树的前序序列
-	dom->ComputeDtPreorder(*func->GetCommonEntryBB(), num);
-	dom->GetDtPreOrder().resize(num);
-    // 生成支配树的dfs序
-	dom->ComputeDtDfn();
-    // 生成反向流图的后序和逆后序序列
-	dom->PdomGenPostOrderID();
-    // 计算反向图的支配关系（同上）
-	dom->ComputePostDominance();
-    // 计算反向图的支配边界
-	dom->ComputePdomFrontiers();
-    // 计算反向图的支配关系（同上）
-	dom->ComputePdomChildren();
-	num = 0;
-    // 生成反向图支配树的前序序列
-	dom->ComputePdtPreorder(*func->GetCommonExitBB(), num);
-	dom->ResizePdtPreOrder(num);
-    // 生成反向图支配树dfs序
-	dom->ComputePdtDfn();
-	if (DEBUGFUNC(func)) {
-		LogInfo::MapleLogger() << "-----------------Dump dominance info and postdominance info---------\n";
-		dom->DumpDoms();
-		dom->DumpPdoms();
-	}
-	return dom;
-	}
+  MemPool* memPool = NewMemPool();
+  auto* dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
+  *func->GetCommonEntryBB(), *func->GetCommonExitBB());
+  // 生成后序遍历序列和逆后序序列
+  dom->GenPostOrderID();
+  // 计算支配关系（被支配节点到支配节点的映射）
+  dom->ComputeDominance();
+  // 计算支配边界
+  dom->ComputeDomFrontiers();
+  // 计算支配关系（支配节点到被支配节点的映射）
+  dom->ComputeDomChildren();
+  size_t num = 0;
+  // 生成支配树的前序序列
+  dom->ComputeDtPreorder(*func->GetCommonEntryBB(), num);
+  dom->GetDtPreOrder().resize(num);
+  // 生成支配树的dfs序
+  dom->ComputeDtDfn();
+  // 生成反向流图的后序和逆后序序列
+  dom->PdomGenPostOrderID();
+  // 计算反向图的支配关系（同上）
+  dom->ComputePostDominance();
+  // 计算反向图的支配边界
+  dom->ComputePdomFrontiers();
+  // 计算反向图的支配关系（同上）
+  dom->ComputePdomChildren();
+  num = 0;
+  // 生成反向图支配树的前序序列
+  dom->ComputePdtPreorder(*func->GetCommonExitBB(), num);
+  dom->ResizePdtPreOrder(num);
+  // 生成反向图支配树dfs序
+  dom->ComputePdtDfn();
+  return dom;
+  }
 ```
 ## Dominance算法
 &emsp;&emsp;没什么意外，和烧脑的LT算法或者SEMI-NCA相比，还是宁愿选择最简单的iterative算法。如果不是太奇葩的流图，效率不输于那些高大上的算法又容易理解。出自论文"A Simple, Fast Dominance Algorithm"  
@@ -52,43 +47,43 @@ AnalysisResult* MeDoDominance::Run(MeFunction* func, MeFuncResultMgr*, ModuleRes
 ``` cpp
 // Figure 3 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDominance() {
-	doms[commonEntryBB.GetBBId()] = &commonEntryBB;
-	bool changed;
-	do {
-		changed = false;
-        // 在逆后序上进行遍历
-		for (size_t i = 1; i < reversePostOrder.size(); ++i) {
-			BB* bb = reversePostOrder[i];
-			BB* pre = nullptr;
-			if (CommonEntryBBIsPred(*bb) || bb->GetPred().empty()) {
-				pre = &commonEntryBB;
-			}
-			else {
-				pre = bb->GetPred(0);
-			}
-			size_t j = 1;
-            // 遍历所有前继，找到第一个有迭代信息的节点
-			while ((doms[pre->GetBBId()] == nullptr || pre == bb) && j < bb->GetPred().size()) {
-				pre = bb->GetPred(j);
-				++j;
-			}
-			BB* newIDom = pre;
-            // 遍历剩余的前继
-			for (; j < bb->GetPred().size(); ++j) {
-				pre = bb->GetPred(j);
-                // 如果迭代信息发生变化
-				if (doms[pre->GetBBId()] != nullptr && pre != bb) {
-                    // 执行交集运算找到最近祖先
-					newIDom = Intersect(*pre, *newIDom);
-				}
-			}
-            // 信息有所更新
-			if (doms[bb->GetBBId()] != newIDom) {
-				doms[bb->GetBBId()] = newIDom;
-				changed = true;
-			}
-		}
-	} while (changed);
+  doms[commonEntryBB.GetBBId()] = &commonEntryBB;
+  bool changed;
+  do {
+    changed = false;
+    // 在逆后序上进行遍历
+    for (size_t i = 1; i < reversePostOrder.size(); ++i) {
+      BB* bb = reversePostOrder[i];
+      BB* pre = nullptr;
+      if (CommonEntryBBIsPred(*bb) || bb->GetPred().empty()) {
+        pre = &commonEntryBB;
+      }
+      else {
+        pre = bb->GetPred(0);
+      }
+      size_t j = 1;
+      // 遍历所有前继，找到第一个有迭代信息的节点
+      while ((doms[pre->GetBBId()] == nullptr || pre == bb) && j < bb->GetPred().size()) {
+        pre = bb->GetPred(j);
+        ++j;
+      }
+      BB* newIDom = pre;
+      // 遍历剩余的前继
+      for (; j < bb->GetPred().size(); ++j) {
+        pre = bb->GetPred(j);
+        // 如果迭代信息发生变化
+        if (doms[pre->GetBBId()] != nullptr && pre != bb) {
+          // 执行交集运算找到最近祖先
+          newIDom = Intersect(*pre, *newIDom);
+        }
+      }
+      // 信息有所更新
+      if (doms[bb->GetBBId()] != newIDom) {
+        doms[bb->GetBBId()] = newIDom;
+        changed = true;
+      }
+    }
+  } while (changed);
 }
 ```
 
@@ -97,23 +92,23 @@ void Dominance::ComputeDominance() {
 ``` cpp
 // Figure 5 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDomFrontiers() {
-	for (const BB* bb : bbVec) {
-		if (bb == nullptr || bb == &commonExitBB) {
-			continue;
-		}
-		if (bb->GetPred().size() < kBBVectorInitialSize) {
-			continue;
-		}
-        // 遍历所有前继
-		for (BB* pre : bb->GetPred()) {
-			BB* runner = pre;
-            // runner不支配当前节点，意味有其他边汇入当前节点，那么当前节点就是runner的支配边界
-			while (runner != doms[bb->GetBBId()] && runner != &commonEntryBB) {
-				domFrontier[runner->GetBBId()].insert(bb->GetBBId());
-				runner = doms[runner->GetBBId()];
-			}
-		}
-	}
+  for (const BB* bb : bbVec) {
+    if (bb == nullptr || bb == &commonExitBB) {
+      continue;
+    }
+    if (bb->GetPred().size() < kBBVectorInitialSize) {
+      continue;
+    }
+    // 遍历所有前继
+    for (BB* pre : bb->GetPred()) {
+      BB* runner = pre;
+      // runner不支配当前节点，意味有其他边汇入当前节点，那么当前节点就是runner的支配边界
+      while (runner != doms[bb->GetBBId()] && runner != &commonEntryBB) {
+        domFrontier[runner->GetBBId()].insert(bb->GetBBId());
+        runner = doms[runner->GetBBId()];
+      }
+    }
+  }
 }
 ```
 
@@ -121,25 +116,25 @@ void Dominance::ComputeDomFrontiers() {
 ``` cpp
 // true if b1 dominates b2
 bool Dominance::Dominate(const BB& bb1, const BB& bb2) {
-    // 任意节点支配自身
-	if (&bb1 == &bb2) {
-		return true;
-	}
-	if (doms[bb2.GetBBId()] == nullptr) {
-		return false;
-	}
-	const BB* immediateDom = &bb2;
-    // 沿着bb2在支配树中的位置向上查找，如果找到bb1，那么说明bb1 dom bb2
-	do {
-		if (immediateDom == nullptr) {
-			return false;
-		}
-		immediateDom = doms[immediateDom->GetBBId()];
-		if (immediateDom == &bb1) {
-			return true;
-		}
-	} while (immediateDom != &commonEntryBB);
-	return false;
+  // 任意节点支配自身
+  if (&bb1 == &bb2) {
+    return true;
+  }
+  if (doms[bb2.GetBBId()] == nullptr) {
+    return false;
+  }
+  const BB* immediateDom = &bb2;
+  // 沿着bb2在支配树中的位置向上查找，如果找到bb1，那么说明bb1 dom bb2
+  do {
+    if (immediateDom == nullptr) {
+      return false;
+    }
+    immediateDom = doms[immediateDom->GetBBId()];
+    if (immediateDom == &bb1) {
+      return true;
+    }
+  } while (immediateDom != &commonEntryBB);
+  return false;
 }
 ```
 
