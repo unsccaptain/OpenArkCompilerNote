@@ -14,3 +14,4 @@
     + [第四节：支配树](./Chapter5-FunctionPhase-Section4-me_dominance.md)
     + [第五节：SSA构造](./Chapter5-FunctionPhase-Section5-me_ssa.md)
     + [第六节：循环识别](./Chapter5-FunctionPhase-Section6-me_loop_analysis.md)
+    + [第七节：别名分析（一）](./Chapter5-FunctionPhase-Section7-me_alias_class-1.md)

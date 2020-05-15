@@ -2,7 +2,7 @@
 &emsp;&emsp;这是一个分析型analysis，用于分析控制流图的支配性。源码位置位于src/maple_me/me_dominance.cpp
 ## 支配性：
 &emsp;&emsp;定义：假设一个有向图存在一个入口节点entry和一个出口节点exit，图中存在两个点a，b，如果任意从entry到b的路径都会经过a，那么我们说a支配b，记为a dom b。具体看我的博客：[支配关系以及流图中的循环（一）](https://blog.csdn.net/yeshahayes/article/details/89021028)
-
+&emsp;&emsp;关于支配性可以看论文《Algorithms for Finding Dominators in Directed Graphs》，这片总结了几种常见的支配树生成算法并分析了其效率。
 ## 实现
 &emsp;&emsp;MeDoDominance只是简单的调用了Dominance的接口来初始化，具体的实现还是在Dominance类中：
 ``` cpp
